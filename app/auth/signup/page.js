@@ -35,19 +35,21 @@ export default function SignupPage() {
       return;
     }
 
-    const { error: profileError } = await supabase
-      .from("installers")
-      .insert({
-        user_id: data.user.id,
-        company_name: formData.company_name,
-        email: formData.email,
-        whatsapp: formData.whatsapp,
-      });
+    if (data?.user) {
+      const { error: profileError } = await supabase
+        .from("installers")
+        .insert({
+          user_id: data.user.id,
+          company_name: formData.company_name,
+          email: formData.email,
+          whatsapp: formData.whatsapp,
+        });
 
-    if (profileError) {
-      setError(profileError.message);
-      setLoading(false);
-      return;
+      if (profileError) {
+        setError(profileError.message);
+        setLoading(false);
+        return;
+      }
     }
 
     setSuccess(true);
@@ -63,7 +65,7 @@ export default function SignupPage() {
             ¡Cuenta creada!
           </h2>
           <p style={{ color: "#7ec8f0", fontSize: "14px", marginBottom: "24px" }}>
-            Revisa tu correo para confirmar tu cuenta y luego inicia sesión.
+            Tu cuenta ha sido creada exitosamente. Inicia sesión para continuar.
           </p>
           <Link
             href="/auth/login"
