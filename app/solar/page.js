@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { APIProvider, Map, Marker } from "@vis.gl/react-google-maps";
+import { APIProvider, Map, AdvancedMarker } from "@vis.gl/react-google-maps";
 import Link from "next/link";
 
 export default function SolarPage() {
@@ -10,6 +10,8 @@ export default function SolarPage() {
   const [error, setError] = useState(null);
   const [solarData, setSolarData] = useState(null);
   const [coordinates, setCoordinates] = useState(null);
+  const [fluxUrl, setFluxUrl] = useState(null);
+  const [fluxBounds, setFluxBounds] = useState(null);
 
   const CFE_RATE_PER_KWH = 3.5;
 
@@ -18,6 +20,8 @@ export default function SolarPage() {
     setLoading(true);
     setError(null);
     setSolarData(null);
+    setFluxUrl(null);
+    setFluxBounds(null);
 
     try {
       const geocodeRes = await fetch(
@@ -47,7 +51,85 @@ export default function SolarPage() {
       const solar = await solarRes.json();
       setSolarData(solar);
 
+      const fluxLayerRes = await fetch(
+        `https://solar.googleapis.com/v1/dataLayers:get?location.latitude=${lat}&location.longitude=${lng}&radiusMeters=100&view=FULL_LAYERS&requiredQuality=LOW&pixelSizeMeters=0.5&key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}`
+      );
+
+      if (fluxLayerRes.ok) {
+        const fluxLayerData = await fluxLayerRes.json();
+
+        if (fluxLayerData.annualFluxUrl) {
+          const response = await fetch(`/api/flux?lat=${lat}&lng=${lng}`);
+          const arrayBuffer = await response.arrayBuffer();
+
+          const geotiff = await import("geotiff");
+          const tiff = await geotiff.fromArrayBuffer(arrayBuffer);
+          const image = await tiff.getImage();
+          const data = await image.readRasters();
+          const width = image.getWidth();
+          const height = image.getHeight();
+
+          const metersToLat = 1 / 111320;
+          const metersToLng = 1 / (111320 * Math.cos(lat * Math.PI / 180));
+          const radius = 100;
+
+          setFluxBounds({
+            north: lat + radius * metersToLat,
+            south: lat - radius * metersToLat,
+            east: lng + radius * metersToLng,
+            west: lng - radius * metersToLng,
+          });
+
+          const canvas = document.createElement("canvas");
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext("2d");
+          const imageData = ctx.createImageData(width, height);
+
+          const fluxValues = data[0];
+          let min = Infinity;
+          let max = -Infinity;
+          for (let i = 0; i < fluxValues.length; i++) {
+            if (fluxValues[i] > 0) {
+              min = Math.min(min, fluxValues[i]);
+              max = Math.max(max, fluxValues[i]);
+            }
+          }
+
+          const getColor = (value) => {
+            if (value <= 0) return [0, 0, 0, 0];
+            const t = (value - min) / (max - min);
+            if (t < 0.25) {
+              const s = t / 0.25;
+              return [0, 0, Math.round(128 + s * 127), 200];
+            } else if (t < 0.5) {
+              const s = (t - 0.25) / 0.25;
+              return [0, Math.round(s * 255), 255, 200];
+            } else if (t < 0.75) {
+              const s = (t - 0.5) / 0.25;
+              return [Math.round(s * 255), 255, Math.round(255 - s * 255), 200];
+            } else {
+              const s = (t - 0.75) / 0.25;
+              return [255, Math.round(255 - s * 255), 0, 200];
+            }
+          };
+
+          for (let i = 0; i < fluxValues.length; i++) {
+            const [r, g, b, a] = getColor(fluxValues[i]);
+            imageData.data[i * 4] = r;
+            imageData.data[i * 4 + 1] = g;
+            imageData.data[i * 4 + 2] = b;
+            imageData.data[i * 4 + 3] = a;
+          }
+
+          ctx.putImageData(imageData, 0, 0);
+          const pngUrl = canvas.toDataURL("image/png");
+          setFluxUrl(pngUrl);
+        }
+      }
+
     } catch (err) {
+      console.error("Error:", err);
       setError("Ocurrió un error. Por favor intenta de nuevo.");
     }
 
@@ -152,17 +234,62 @@ export default function SolarPage() {
             </div>
 
             {coordinates && (
-              <div style={{ borderRadius: "12px", overflow: "hidden", border: "1px solid #1a3a6b", marginBottom: "24px", height: "300px" }}>
+              <div style={{ borderRadius: "12px", overflow: "hidden", border: "1px solid #1a3a6b", marginBottom: "16px", height: "350px", position: "relative" }}>
                 <APIProvider apiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}>
                   <Map
                     defaultCenter={coordinates}
-                    defaultZoom={18}
+                    defaultZoom={19}
                     mapTypeId="satellite"
+                    mapId="vecinosolar-solar"
                     style={{ width: "100%", height: "100%" }}
+                    onIdle={(map) => {
+                      if (fluxUrl && fluxBounds && map) {
+                        const googleMap = map.map;
+                        if (googleMap && window.google) {
+                          const bounds = new window.google.maps.LatLngBounds(
+                            new window.google.maps.LatLng(fluxBounds.south, fluxBounds.west),
+                            new window.google.maps.LatLng(fluxBounds.north, fluxBounds.east)
+                          );
+                          new window.google.maps.GroundOverlay(
+                            fluxUrl,
+                            bounds,
+                            { opacity: 0.8 }
+                          ).setMap(googleMap);
+                        }
+                      }
+                    }}
                   >
-                    <Marker position={coordinates} />
+                    <AdvancedMarker position={coordinates} />
                   </Map>
                 </APIProvider>
+              </div>
+            )}
+
+            {fluxUrl && (
+              <div style={{ background: "#0a1628", border: "1px solid #1a3a6b", borderRadius: "8px", padding: "12px 16px", marginBottom: "24px" }}>
+                <p style={{ color: "#7ec8f0", fontSize: "12px", marginBottom: "8px" }}>Mapa de radiación solar anual</p>
+                <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
+                  {[
+                    { color: "#00007f", label: "Bajo" },
+                    { color: "#0000ff", label: "" },
+                    { color: "#00ffff", label: "" },
+                    { color: "#00ff00", label: "" },
+                    { color: "#ffff00", label: "" },
+                    { color: "#ff8000", label: "" },
+                    { color: "#ff0000", label: "Alto" },
+                  ].map((item, i) => (
+                    <div key={i} style={{ display: "flex", flexDirection: "column", alignItems: "center", flex: 1 }}>
+                      <div style={{ width: "100%", height: "12px", background: item.color, borderRadius: i === 0 ? "4px 0 0 4px" : i === 6 ? "0 4px 4px 0" : "0" }} />
+                      {item.label && <p style={{ color: "#4a90d9", fontSize: "10px", marginTop: "4px" }}>{item.label}</p>}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {!fluxUrl && solarData && (
+              <div style={{ background: "#0a1628", border: "1px solid #1a3a6b", borderRadius: "8px", padding: "12px 16px", marginBottom: "24px" }}>
+                <p style={{ color: "#7ec8f0", fontSize: "12px" }}>Vista satelital del techo — datos de radiación no disponibles para esta dirección exacta.</p>
               </div>
             )}
 
