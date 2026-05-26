@@ -94,10 +94,29 @@ export default function HomePage() {
         </div>
       </section>
 
-      <footer style={{ background: "#0a1628", borderTop: "1px solid #1a3a6b", padding: "24px", textAlign: "center" }}>
-        <p style={{ color: "#f0c040", fontSize: "16px", fontWeight: "500", letterSpacing: "2px", marginBottom: "8px" }}>VECINOSOLAR</p>
-        <p style={{ color: "#4a90d9", fontSize: "12px" }}>Monterrey, Nuevo León — 2026</p>
-      </footer>
+      <section style={{ padding: "80px 24px", background: "#0a1628", borderTop: "1px solid #1a3a6b", borderBottom: "1px solid #1a3a6b" }}>
+  <div style={{ maxWidth: "700px", margin: "0 auto", textAlign: "center" }}>
+    <h3 style={{ color: "#c8e6ff", fontSize: "28px", fontWeight: "500", marginBottom: "12px" }}>
+      Conoce el potencial solar de <span style={{ color: "#f0c040" }}>tu techo</span>
+    </h3>
+    <p style={{ color: "#7ec8f0", fontSize: "16px", lineHeight: "1.7", marginBottom: "32px" }}>
+      Ingresa tu dirección y descubre cuántos paneles caben en tu techo, cuánta energía producirían y cuánto ahorrarías en tu recibo de CFE cada mes.
+    </p>
+    <Link href="/solar" style={{ background: "#f0c040", color: "#07111f", fontWeight: "500", fontSize: "16px", padding: "14px 40px", borderRadius: "30px", textDecoration: "none" }}>
+      Analizar mi techo gratis
+    </Link>
+  </div>
+</section>
+
+<footer style={{ background: "#0a1628", borderTop: "1px solid #1a3a6b", padding: "24px", textAlign: "center" }}>
+  <p style={{ color: "#f0c040", fontSize: "16px", fontWeight: "500", letterSpacing: "2px", marginBottom: "8px" }}>VECINOSOLAR</p>
+  <div style={{ display: "flex", gap: "24px", justifyContent: "center", marginBottom: "12px" }}>
+    <Link href="/map" style={{ color: "#4a90d9", fontSize: "13px", textDecoration: "none" }}>Mapa</Link>
+    <Link href="/solar" style={{ color: "#4a90d9", fontSize: "13px", textDecoration: "none" }}>Potencial solar</Link>
+    <Link href="/auth/signup" style={{ color: "#4a90d9", fontSize: "13px", textDecoration: "none" }}>Instaladores</Link>
+  </div>
+  <p style={{ color: "#4a90d9", fontSize: "12px" }}>Monterrey, Nuevo León — 2026</p>
+</footer>
 
     </div>
   );

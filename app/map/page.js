@@ -37,13 +37,16 @@ export default function MapPage() {
           <p style={{ color: "#4a90d9", fontSize: "11px" }}>Monterrey, Nuevo León — {loading ? "Cargando..." : `${projects.length} proyectos`}</p>
         </div>
         <div style={{ display: "flex", gap: "8px" }}>
-          <Link href="/auth/login" style={{ background: "#1a3a6b", color: "#7ec8f0", fontSize: "12px", padding: "6px 14px", borderRadius: "6px", border: "1px solid #2a5a9b" }}>
-            Iniciar sesión
-          </Link>
-          <Link href="/auth/signup" style={{ background: "#f0c040", color: "#07111f", fontSize: "12px", padding: "6px 14px", borderRadius: "6px", fontWeight: "500" }}>
-            Registrarse
-          </Link>
-        </div>
+  <Link href="/solar" style={{ background: "#1a3a6b", color: "#7ec8f0", fontSize: "12px", padding: "6px 14px", borderRadius: "6px", border: "1px solid #2a5a9b" }}>
+    🌞 Potencial solar
+  </Link>
+  <Link href="/auth/login" style={{ background: "#1a3a6b", color: "#7ec8f0", fontSize: "12px", padding: "6px 14px", borderRadius: "6px", border: "1px solid #2a5a9b" }}>
+    Iniciar sesión
+  </Link>
+  <Link href="/auth/signup" style={{ background: "#f0c040", color: "#07111f", fontSize: "12px", padding: "6px 14px", borderRadius: "6px", fontWeight: "500" }}>
+    Registrarse
+  </Link>
+</div>
       </header>
 
       <div style={{ flex: 1 }}>
