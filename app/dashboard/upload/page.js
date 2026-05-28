@@ -16,6 +16,8 @@ export default function UploadPage() {
     title: "",
     description: "",
     neighborhood: "",
+    city: "",
+    state: "",
     latitude: "",
     longitude: "",
     system_size_kwp: "",
@@ -89,8 +91,8 @@ export default function UploadPage() {
         title: formData.title,
         description: formData.description,
         neighborhood: formData.neighborhood,
-        city: "Monterrey",
-        state: "Nuevo León",
+        city: formData.city,
+        state: formData.state,
         latitude: parseFloat(formData.latitude),
         longitude: parseFloat(formData.longitude),
         system_size_kwp: parseFloat(formData.system_size_kwp),
@@ -199,7 +201,7 @@ export default function UploadPage() {
                 style={{ ...inputStyle, resize: "vertical" }}
               />
             </div>
-            <div>
+            <div style={{ marginBottom: "16px" }}>
               <label style={labelStyle}>Colonia *</label>
               <input
                 type="text"
@@ -207,9 +209,35 @@ export default function UploadPage() {
                 value={formData.neighborhood}
                 onChange={handleChange}
                 required
-                placeholder="Cumbres, San Pedro, Valle Alto..."
+                placeholder="Valle Alto, Del Valle, Cumbres 4to Sector..."
                 style={inputStyle}
               />
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
+              <div>
+                <label style={labelStyle}>Ciudad / Municipio *</label>
+                <input
+                  type="text"
+                  name="city"
+                  value={formData.city}
+                  onChange={handleChange}
+                  required
+                  placeholder="San Pedro Garza García"
+                  style={inputStyle}
+                />
+              </div>
+              <div>
+                <label style={labelStyle}>Estado *</label>
+                <input
+                  type="text"
+                  name="state"
+                  value={formData.state}
+                  onChange={handleChange}
+                  required
+                  placeholder="Nuevo León"
+                  style={inputStyle}
+                />
+              </div>
             </div>
           </div>
 
@@ -224,7 +252,6 @@ export default function UploadPage() {
                 textAlign: "center",
                 cursor: "pointer",
                 background: photoPreview ? "transparent" : "#0d1f38",
-                position: "relative",
                 overflow: "hidden",
               }}
             >
