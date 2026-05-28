@@ -1,8 +1,28 @@
 "use client";
 
-import { useState } from "react";
-import { APIProvider, Map, AdvancedMarker } from "@vis.gl/react-google-maps";
+import { useState, useEffect, useRef } from "react";
+import { APIProvider, Map, AdvancedMarker, useMap } from "@vis.gl/react-google-maps";
 import Link from "next/link";
+
+function FluxOverlay({ fluxUrl, fluxBounds }) {
+  const map = useMap();
+
+  useEffect(() => {
+    if (!map || !fluxUrl || !fluxBounds || !window.google) return;
+
+    const bounds = new window.google.maps.LatLngBounds(
+      new window.google.maps.LatLng(fluxBounds.south, fluxBounds.west),
+      new window.google.maps.LatLng(fluxBounds.north, fluxBounds.east)
+    );
+
+    const overlay = new window.google.maps.GroundOverlay(fluxUrl, bounds, { opacity: 0.8 });
+    overlay.setMap(map);
+
+    return () => overlay.setMap(null);
+  }, [map, fluxUrl, fluxBounds]);
+
+  return null;
+}
 
 export default function SolarPage() {
   const [address, setAddress] = useState("");
@@ -12,6 +32,7 @@ export default function SolarPage() {
   const [coordinates, setCoordinates] = useState(null);
   const [fluxUrl, setFluxUrl] = useState(null);
   const [fluxBounds, setFluxBounds] = useState(null);
+  const [searchDone, setSearchDone] = useState(false);
 
   const CFE_RATE_PER_KWH = 3.5;
 
@@ -22,6 +43,7 @@ export default function SolarPage() {
     setSolarData(null);
     setFluxUrl(null);
     setFluxBounds(null);
+    setSearchDone(false);
 
     try {
       const geocodeRes = await fetch(
@@ -45,6 +67,7 @@ export default function SolarPage() {
       if (!solarRes.ok) {
         setError("No encontramos datos solares para esta dirección. Intenta con otra dirección cercana.");
         setLoading(false);
+        setSearchDone(true);
         return;
       }
 
@@ -134,6 +157,7 @@ export default function SolarPage() {
     }
 
     setLoading(false);
+    setSearchDone(true);
   };
 
   const getBestConfig = () => {
@@ -208,13 +232,21 @@ export default function SolarPage() {
           </button>
         </form>
 
-        {error && (
+        {loading && (
+          <div style={{ background: "#0a1628", border: "1px solid #1a3a6b", borderRadius: "12px", padding: "32px", textAlign: "center", marginBottom: "24px" }}>
+            <p style={{ color: "#f0c040", fontSize: "24px", marginBottom: "12px" }}>☀️</p>
+            <p style={{ color: "#7ec8f0", fontSize: "15px", marginBottom: "8px" }}>Analizando tu techo...</p>
+            <p style={{ color: "#4a90d9", fontSize: "13px" }}>Consultando datos solares de Google para tu dirección</p>
+          </div>
+        )}
+
+        {error && !loading && (
           <div style={{ background: "#3a0d0d", border: "1px solid #f87171", borderRadius: "12px", padding: "16px", marginBottom: "24px" }}>
             <p style={{ color: "#f87171", fontSize: "14px" }}>{error}</p>
           </div>
         )}
 
-        {solarData && (
+        {solarData && !loading && (
           <div>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: "16px", marginBottom: "24px" }}>
               {[
@@ -240,26 +272,13 @@ export default function SolarPage() {
                     defaultCenter={coordinates}
                     defaultZoom={19}
                     mapTypeId="satellite"
-                    mapId="vecinosolar-solar"
+                    mapId="vecinosolar"
                     style={{ width: "100%", height: "100%" }}
-                    onIdle={(map) => {
-                      if (fluxUrl && fluxBounds && map) {
-                        const googleMap = map.map;
-                        if (googleMap && window.google) {
-                          const bounds = new window.google.maps.LatLngBounds(
-                            new window.google.maps.LatLng(fluxBounds.south, fluxBounds.west),
-                            new window.google.maps.LatLng(fluxBounds.north, fluxBounds.east)
-                          );
-                          new window.google.maps.GroundOverlay(
-                            fluxUrl,
-                            bounds,
-                            { opacity: 0.8 }
-                          ).setMap(googleMap);
-                        }
-                      }
-                    }}
                   >
                     <AdvancedMarker position={coordinates} />
+                    {fluxUrl && fluxBounds && (
+                      <FluxOverlay fluxUrl={fluxUrl} fluxBounds={fluxBounds} />
+                    )}
                   </Map>
                 </APIProvider>
               </div>
@@ -287,7 +306,7 @@ export default function SolarPage() {
               </div>
             )}
 
-            {!fluxUrl && solarData && (
+            {searchDone && !fluxUrl && (
               <div style={{ background: "#0a1628", border: "1px solid #1a3a6b", borderRadius: "8px", padding: "12px 16px", marginBottom: "24px" }}>
                 <p style={{ color: "#7ec8f0", fontSize: "12px" }}>Vista satelital del techo — datos de radiación no disponibles para esta dirección exacta.</p>
               </div>
