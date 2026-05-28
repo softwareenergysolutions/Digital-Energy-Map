@@ -37,16 +37,16 @@ export default function MapPage() {
           <p style={{ color: "#4a90d9", fontSize: "11px" }}>Monterrey, Nuevo León — {loading ? "Cargando..." : `${projects.length} proyectos`}</p>
         </div>
         <div style={{ display: "flex", gap: "8px" }}>
-  <Link href="/solar" style={{ background: "#1a3a6b", color: "#7ec8f0", fontSize: "12px", padding: "6px 14px", borderRadius: "6px", border: "1px solid #2a5a9b" }}>
-    🌞 Potencial solar
-  </Link>
-  <Link href="/auth/login" style={{ background: "#1a3a6b", color: "#7ec8f0", fontSize: "12px", padding: "6px 14px", borderRadius: "6px", border: "1px solid #2a5a9b" }}>
-    Iniciar sesión
-  </Link>
-  <Link href="/auth/signup" style={{ background: "#f0c040", color: "#07111f", fontSize: "12px", padding: "6px 14px", borderRadius: "6px", fontWeight: "500" }}>
-    Registrarse
-  </Link>
-</div>
+          <Link href="/solar" style={{ background: "#1a3a6b", color: "#7ec8f0", fontSize: "12px", padding: "6px 14px", borderRadius: "6px", border: "1px solid #2a5a9b", textDecoration: "none" }}>
+            🌞 Potencial solar
+          </Link>
+          <Link href="/auth/login" style={{ background: "#1a3a6b", color: "#7ec8f0", fontSize: "12px", padding: "6px 14px", borderRadius: "6px", border: "1px solid #2a5a9b", textDecoration: "none" }}>
+            Iniciar sesión
+          </Link>
+          <Link href="/auth/signup" style={{ background: "#f0c040", color: "#07111f", fontSize: "12px", padding: "6px 14px", borderRadius: "6px", fontWeight: "500", textDecoration: "none" }}>
+            Registrarse
+          </Link>
+        </div>
       </header>
 
       <div style={{ flex: 1 }}>
@@ -76,7 +76,16 @@ export default function MapPage() {
                 position={{ lat: selectedProject.latitude, lng: selectedProject.longitude }}
                 onCloseClick={() => setSelectedProject(null)}
               >
-                <div style={{ padding: "8px", maxWidth: "220px", background: "#0a1628", borderRadius: "8px" }}>
+                <div style={{ padding: "8px", maxWidth: "240px", background: "#0a1628", borderRadius: "8px" }}>
+
+                  {selectedProject.photo_url && (
+                    <img
+                      src={selectedProject.photo_url}
+                      alt={selectedProject.title}
+                      style={{ width: "100%", height: "130px", objectFit: "cover", borderRadius: "6px", marginBottom: "10px" }}
+                    />
+                  )}
+
                   <h3 style={{ color: "#f0c040", fontWeight: "500", fontSize: "14px", marginBottom: "4px" }}>
                     {selectedProject.title}
                   </h3>
@@ -89,13 +98,17 @@ export default function MapPage() {
                     {selectedProject.approx_cost_mxn && (
                       <p style={{ color: "#c8e6ff", marginBottom: "4px" }}>💰 Aprox: ${selectedProject.approx_cost_mxn.toLocaleString()} MXN</p>
                     )}
+                    {selectedProject.installation_date && (
+                      <p style={{ color: "#c8e6ff" }}>📅 {new Date(selectedProject.installation_date).toLocaleDateString("es-MX", { year: "numeric", month: "long" })}</p>
+                    )}
                   </div>
+
                   {selectedProject.homeowner_contact_optin && selectedProject.homeowner_whatsapp && (
                     <a
                       href={`https://wa.me/${selectedProject.homeowner_whatsapp}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      style={{ display: "block", background: "#0d7a3e", color: "#fff", fontSize: "12px", fontWeight: "500", textAlign: "center", padding: "8px", borderRadius: "20px" }}
+                      style={{ display: "block", background: "#0d7a3e", color: "#fff", fontSize: "12px", fontWeight: "500", textAlign: "center", padding: "8px", borderRadius: "20px", marginBottom: "6px", textDecoration: "none" }}
                     >
                       Contactar propietario
                     </a>

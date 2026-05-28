@@ -10,6 +10,8 @@ export default function UploadPage() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [photoFile, setPhotoFile] = useState(null);
+  const [photoPreview, setPhotoPreview] = useState(null);
   const [formData, setFormData] = useState({
     title: "",
     description: "",
@@ -43,10 +45,42 @@ export default function UploadPage() {
     setFormData({ ...formData, [e.target.name]: value });
   };
 
+  const handlePhotoChange = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    setPhotoFile(file);
+    const reader = new FileReader();
+    reader.onloadend = () => setPhotoPreview(reader.result);
+    reader.readAsDataURL(file);
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
+
+    let photoUrl = null;
+
+    if (photoFile) {
+      const fileExt = photoFile.name.split(".").pop();
+      const fileName = `${user.id}-${Date.now()}.${fileExt}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from("project-photos")
+        .upload(fileName, photoFile);
+
+      if (uploadError) {
+        setError("Error al subir la foto: " + uploadError.message);
+        setLoading(false);
+        return;
+      }
+
+      const { data: urlData } = supabase.storage
+        .from("project-photos")
+        .getPublicUrl(fileName);
+
+      photoUrl = urlData.publicUrl;
+    }
 
     const { error: insertError } = await supabase
       .from("projects")
@@ -67,6 +101,7 @@ export default function UploadPage() {
         approx_cost_mxn: formData.approx_cost_mxn ? parseInt(formData.approx_cost_mxn) : null,
         homeowner_contact_optin: formData.homeowner_contact_optin,
         homeowner_whatsapp: formData.homeowner_whatsapp || null,
+        photo_url: photoUrl,
         status: "pending",
         approved: false,
       });
@@ -123,10 +158,7 @@ export default function UploadPage() {
           <h1 style={{ color: "#f0c040", fontSize: "20px", fontWeight: "500", letterSpacing: "2px" }}>VECINOSOLAR</h1>
           <p style={{ color: "#4a90d9", fontSize: "11px" }}>Subir nuevo proyecto</p>
         </div>
-        <Link
-          href="/dashboard"
-          style={{ background: "#1a3a6b", color: "#7ec8f0", fontSize: "12px", padding: "6px 14px", borderRadius: "6px", border: "1px solid #2a5a9b" }}
-        >
+        <Link href="/dashboard" style={{ background: "#1a3a6b", color: "#7ec8f0", fontSize: "12px", padding: "6px 14px", borderRadius: "6px", border: "1px solid #2a5a9b", textDecoration: "none" }}>
           Volver al dashboard
         </Link>
       </header>
@@ -179,6 +211,53 @@ export default function UploadPage() {
                 style={inputStyle}
               />
             </div>
+          </div>
+
+          <div style={sectionStyle}>
+            <p style={sectionTitleStyle}>Foto del proyecto</p>
+            <div
+              onClick={() => document.getElementById("photo-input").click()}
+              style={{
+                border: "2px dashed #1a3a6b",
+                borderRadius: "12px",
+                padding: "32px",
+                textAlign: "center",
+                cursor: "pointer",
+                background: photoPreview ? "transparent" : "#0d1f38",
+                position: "relative",
+                overflow: "hidden",
+              }}
+            >
+              {photoPreview ? (
+                <img
+                  src={photoPreview}
+                  alt="Preview"
+                  style={{ width: "100%", maxHeight: "200px", objectFit: "cover", borderRadius: "8px" }}
+                />
+              ) : (
+                <div>
+                  <p style={{ color: "#f0c040", fontSize: "32px", marginBottom: "8px" }}>📷</p>
+                  <p style={{ color: "#7ec8f0", fontSize: "14px", marginBottom: "4px" }}>Haz clic para subir una foto</p>
+                  <p style={{ color: "#4a90d9", fontSize: "12px" }}>JPG, PNG — máx 10MB</p>
+                </div>
+              )}
+            </div>
+            <input
+              id="photo-input"
+              type="file"
+              accept="image/*"
+              onChange={handlePhotoChange}
+              style={{ display: "none" }}
+            />
+            {photoPreview && (
+              <button
+                type="button"
+                onClick={() => { setPhotoFile(null); setPhotoPreview(null); }}
+                style={{ background: "transparent", color: "#f87171", fontSize: "12px", padding: "6px 0", border: "none", cursor: "pointer", marginTop: "8px" }}
+              >
+                Eliminar foto
+              </button>
+            )}
           </div>
 
           <div style={sectionStyle}>
